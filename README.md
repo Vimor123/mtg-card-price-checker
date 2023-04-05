@@ -5,7 +5,10 @@ A simple terminal card price checker for MTG decklists
 ## Premise
 
 Do you want to quickly update the prices of your MTG card collections? Update your decklists, maybe track some other deck prices? Here's a command line tool for you.
-You just need to pass the file name/path to your decklist/collection and tell it what you want to do with it. It's gonna check the card prices using a lovely API developed by the Scryfall team (https://scryfall.com/docs/api). Keep in mind that this tool will only check the nonfoil, standard artwork version of the card, so it's not suitable for use if you want to know the price of alternate artwork/foil versions of cards.
+
+You just need to pass the file name/path to your decklist/collection and tell it what you want to do with it. It's gonna check the card prices using a lovely API developed by the Scryfall team (https://scryfall.com/docs/api).
+
+Keep in mind that this tool will only check the nonfoil, standard artwork version of the card, so it's not suitable for use if you want to know the price of alternate artwork/foil versions of cards.
 
 ## Usage
 
@@ -17,7 +20,7 @@ python checker.py [flags ...] [filenames ...]
 
 The price checker will parse the files, looking for card names and the quantities of those cards, so each line in your file should have this format:
 
-<card name>;<quantity>
+\<card name\>;\<quantity\>
 
 Note: the collection file should not have a header and should only consist of those lines, if you want to add something after the line, just put a semicolon after the quantity.
 
