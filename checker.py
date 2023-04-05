@@ -10,6 +10,11 @@ parser = argparse.ArgumentParser(description = "MTG Card Price Checker")
 parser.add_argument('filenames', nargs = '*',
                     help = 'csv files containing collections of cards')
 
+parser.add_argument('-u', '--update-files', help = "update the files, puts card prices in the given files",
+                    action = 'store_true', dest = 'update_files')
+parser.add_argument('-o', '--output-files', help = "output new files (in cwd) containing card names, quantities and prices",
+                    action = 'store_true', dest = 'output_files')
+
 
 def get_card_price(card_name):
     url = "https://api.scryfall.com/cards/named?exact=" + card_name
@@ -56,6 +61,51 @@ def read_collection(filename):
     return collection
 
 
+def write_collection(filename, collection):
+    current_dir = os.getcwd()
+    absolute_path = os.path.join(current_dir, filename)
+
+    delimiter = ';'
+    file = codecs.open(absolute_path, 'w', 'utf-8')
+
+    for card in collection:
+        if isinstance(card["price"], str):
+            full_price = card["price"]
+            file.write("{}{}{}{}{}{}{}\n".format(card["name"], delimiter,
+                                                 card["quantity"], delimiter,
+                                                 card["price"], delimiter,
+                                                 full_price))
+        else:
+            # Computers are bad at decimals, so we should make the price a natural number
+            # before the multiplication, and return it to normal after
+            full_price = (card["price"] * 100) * card["quantity"] / 100
+        
+            file.write("{}{}{}{}{:.2f}{}{:.2f}\n".format(card["name"], delimiter,
+                                                         card["quantity"], delimiter,
+                                                         card["price"], delimiter,
+                                                         full_price))
+
+    file.close()
+
+
+def output_collection(filename, collection):
+    current_dir = os.getcwd()
+    absolute_path = os.path.join(current_dir, filename)
+
+    if os.path.exists(absolute_path):
+        raise FileExistsError("File {} already exists".format(filename))
+
+    write_collection(filename, collection)
+
+
+def calculate_total(collection):
+    total = 0.0
+    for card in collection:
+        if not isinstance(card["price"], str):
+            total += card["price"] * 100 * card["quantity"]
+    return total / 100
+
+
 args = parser.parse_args()
 
 for filename in args.filenames:
@@ -82,8 +132,28 @@ for filename in args.filenames:
         except NameError as inst:
             print(inst)
             print("Skipping {}".format(card["name"]))
-            card["price"] = "N"
+            card["price"] = "N/A"
 
-    print(collection)
+    if args.update_files:
+        print("Updating {}".format(filename))
+        write_collection(filename, collection)
+
+    if args.output_files:
+        # For keeping file extensions
+        filename_segments = os.path.basename(filename).split('.')
+        if len(filename_segments) < 2:
+            # No extension
+            new_filename = filename + " (1)"
+        else:
+            filename_segments[-2] += " (1)"
+            new_filename = ".".join(filename_segments)
+            
+        print("Outputting to {}".format(new_filename))
+        try:
+            output_collection(new_filename, collection)
+        except FileExistsError as inst:
+            print(inst)
+            print("Skipping")
         
-    print("")
+    print("Done")
+    print("Collection total: {:.2f}\n".format(calculate_total(collection)))
