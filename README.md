@@ -20,7 +20,7 @@ python checker.py [flags ...] [filenames ...]
 
 The price checker will parse the files, looking for card names and the quantities of those cards, so each line in your file should have this format:
 
-\<card name\>;\<quantity\>
+"card name";"quantity"
 
 Note: the collection file should not have a header and should only consist of those lines, if you want to add something after the line, just put a semicolon after the quantity.
 
@@ -28,13 +28,13 @@ Note: the collection file should not have a header and should only consist of th
 
 So what can the price checker do? Without any flags, it will only print out the total price of each collection, but you can also:
 
-* update the collection files - after running the checker, every line in your file should contain this: <card name>;<quantity>;<card price>;<price * quantity>
+* update the collection files - after running the checker, every line in your file should contain this: "card name";"quantity";"card price";"price * quantity"
   - python checker.py -u [filenames ...]
   - Note: this will delete everything else written in the files
 
 * output to new collection files - the checker will create new files in the current working directory
   - python checker.py -o [filenames ...]
-  - Note: this will create new files with a name "<previous file name> (1).<extension>" only if those files don't exist in the current working directory
+  - Note: this will create new files with a name "previous file name" (1)."extension" only if those files don't exist in the current working directory
 
 ## Notes
 
