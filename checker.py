@@ -18,6 +18,8 @@ parser.add_argument('-o', '--output-files', help = "output new files (in cwd) co
                     action = 'store_true', dest = 'output_files')
 parser.add_argument('-p', '--print-only', help = "don't check for prices online, simply check the prices currently stored in the files",
                     action = 'store_true', dest = 'print_only')
+parser.add_argument('-a', '--all-cards', help = "print the prices of all cards in the collection",
+                    action = 'store_true', dest = 'print_all')
 
 
 # Global variables
@@ -149,6 +151,57 @@ def calculate_total(collection):
     return total / 100
 
 
+def print_collection(collection):
+    column_widths = { "name" : 9,
+                      "quantity" : 3,
+                      "price" : 5,
+                      "total" : 5}
+    for card in collection:
+        if not isinstance(card["price"], str):
+            card["total"] = card["price"] * 100 * card["quantity"] / 100
+        else:
+            card["total"] = "N/A"
+
+        for key in column_widths:
+            if isinstance(card[key], float):
+                if len("{:.2f}".format(card[key])) > column_widths[key]:
+                    column_widths[key] = len("{:.2f}".format(card[key]))
+            else:
+                if len(str(card[key])) > column_widths[key]:
+                    column_widths[key] = len(str(card[key]))
+
+    column_widths["price"] += 1
+    column_widths["total"] += 1
+
+    print("{}|{}|{}|{}".format("Card name".ljust(column_widths["name"]),
+                               "Qty".ljust(column_widths["quantity"]),
+                               "Price".ljust(column_widths["price"]),
+                               "Total".ljust(column_widths["total"])))
+    
+    keys = list(column_widths.keys())
+    for i in range(len(keys) - 1):
+        print("-" * column_widths[keys[i]], end = "")
+        print("+", end = "")
+    print("-" * column_widths[keys[-1]])
+    
+    for card in collection:
+        if not isinstance(card["price"], str):
+            print("{}|{}|{}|{}".format(card["name"].ljust(column_widths["name"]),
+                                       str(card["quantity"]).rjust(column_widths["quantity"]),
+                                       "{:.2f}€".format(card["price"]).rjust(column_widths["price"]),
+                                       "{:.2f}€".format(card["total"]).rjust(column_widths["total"])))
+        else:
+            print("{}|{}|{}|{}".format(card["name"].ljust(column_widths["name"]),
+                                       str(card["quantity"]).rjust(column_widths["quantity"]),
+                                       card["price"].rjust(column_widths["price"]),
+                                       card["total"].rjust(column_widths["total"])))
+
+    for i in range(len(keys) - 1):
+        print("-" * column_widths[keys[i]], end = "")
+        print("+", end = "")
+    print("-" * column_widths[keys[-1]])
+
+
 args = parser.parse_args()
 
 for filename in args.filenames:
@@ -213,6 +266,11 @@ for filename in args.filenames:
         except FileExistsError as inst:
             print(inst)
             print("Skipping")
-        
+
     print("Done")
-    print("Collection total: {:.2f}\n".format(calculate_total(collection)))
+    
+    if args.print_all:
+        print("All cards:")
+        print_collection(collection)
+    
+    print("Collection total: {:.2f}€\n".format(calculate_total(collection)))
