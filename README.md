@@ -39,6 +39,11 @@ So what can the price checker do? Without any flags, it will only print out the 
 * print only, do not check the prices online - the checker will not check for new prices, it will read the price from the file
   - python checker.py -p [filenames ...]
   - Note: every line in this file should be in this format: "card name";"quantity";"card price"[; ...]
+  
+* print prices for all cards - the checker will print out a table containg the name, quantity, price and total for each card
+  - python checker.py -a [filenames ...]
+  
+You can combine the flags in any way you like.
 
 ## Notes
 
