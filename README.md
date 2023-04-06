@@ -35,6 +35,10 @@ So what can the price checker do? Without any flags, it will only print out the 
 * output to new collection files - the checker will create new files in the current working directory
   - python checker.py -o [filenames ...]
   - Note: this will create new files with a name "previous file name" (1)."extension" only if those files don't exist in the current working directory
+  
+* print only, do not check the prices online - the checker will not check for new prices, it will read the price from the file
+  - python checker.py -p [filenames ...]
+  - Note: every line in this file should be in this format: "card name";"quantity";"card price"[; ...]
 
 ## Notes
 
