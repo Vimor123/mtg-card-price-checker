@@ -6,6 +6,8 @@ import codecs
 import time
 
 
+# Arguments
+
 parser = argparse.ArgumentParser(description = "MTG Card Price Checker")
 parser.add_argument('filenames', nargs = '*',
                     help = 'csv files containing collections of cards')
@@ -14,6 +16,13 @@ parser.add_argument('-u', '--update-files', help = "update the files, puts card 
                     action = 'store_true', dest = 'update_files')
 parser.add_argument('-o', '--output-files', help = "output new files (in cwd) containing card names, quantities and prices",
                     action = 'store_true', dest = 'output_files')
+parser.add_argument('-p', '--print-only', help = "don't check for prices online, simply check the prices currently stored in the files",
+                    action = 'store_true', dest = 'print_only')
+
+
+# Global variables
+
+delimiter = ';'
 
 
 def get_card_price(card_name):
@@ -37,13 +46,12 @@ def read_collection(filename):
     if not os.path.exists(absolute_path):
         raise FileNotFoundError("File \"{}\" could not be found!".format(filename))
 
-    # File format (no header row):
+    # File format:
     # <name><delimiter><quantity>\n
     # <name><delimiter><quantity>\n
     # ...
     
     collection = []
-    delimiter = ';'
     file = codecs.open(absolute_path, 'r', 'utf-8')
 
     for index, line in enumerate(file):
@@ -61,11 +69,46 @@ def read_collection(filename):
     return collection
 
 
+def read_collection_priced(filename):
+    current_dir = os.getcwd()
+    absolute_path = os.path.join(current_dir, filename)
+
+    if not os.path.exists(absolute_path):
+        raise FileNotFoundError("File \"{}\" could not be found!".format(filename))
+
+    # File format:
+    # <name><delimiter><quantity><delimiter><price>
+    # <name><delimiter><quantity><delimiter><price>
+    # ...
+
+    collection = []
+    file = codecs.open(absolute_path)
+
+    for index, line in enumerate(file):
+        stripped_line = line.strip()
+        segments = stripped_line.split(delimiter)
+        if len(segments) < 3 or not segments[1].isnumeric():
+            raise ValueError("Wrong text format! (line: {})\n Line: \"{}\"\n" \
+                             "Needs to be: \"<card name>{}<card quantity>{}<card price>\""
+                             .format(index + 1, stripped_line, delimiter, delimiter))
+        try:
+            price = float(segments[2])
+        except ValueError:
+            price = segments[2]
+        
+        collection.append({ "name" : segments[0],
+                            "quantity" : int(segments[1]),
+                            "price": price})
+
+    file.close()
+
+    return collection
+
+
 def write_collection(filename, collection):
     current_dir = os.getcwd()
     absolute_path = os.path.join(current_dir, filename)
 
-    delimiter = ';'
     file = codecs.open(absolute_path, 'w', 'utf-8')
 
     for card in collection:
@@ -109,30 +152,46 @@ def calculate_total(collection):
 args = parser.parse_args()
 
 for filename in args.filenames:
-    print("Getting data for {}".format(filename))
-    try:
-        collection = read_collection(filename)
-    except FileNotFoundError:
-        print("File {} has not been found, skipping\n".format(filename))
-        continue
-    except ValueError as inst:
-        print(inst)
-        print("Skipping\n")
-        continue
+    print("Getting data from {}".format(filename))
 
-    for card in collection:
-
-        # Wait 200 milliseconds not to overload the API
-        # https://scryfall.com/docs/api
-
-        time.sleep(0.2)
-        
+    if args.print_only:
         try:
-            card["price"] = get_card_price(card["name"])
-        except NameError as inst:
+            collection = read_collection_priced(filename)
+        except FileNotFoundError:
+            print("File {} has not been found, skipping\n".format(filename))
+            continue
+        except ValueError as inst:
             print(inst)
-            print("Skipping {}".format(card["name"]))
-            card["price"] = "N/A"
+            print("Skipping\n")
+            continue
+    
+    else:
+        try:
+            collection = read_collection(filename)
+        except FileNotFoundError:
+            print("File {} has not been found, skipping\n".format(filename))
+            continue
+        except ValueError as inst:
+            print(inst)
+            print("Skipping\n")
+            continue
+
+        print("Checking card prices")
+
+        for card in collection:
+
+            # Wait 200 milliseconds not to overload the API
+            # https://scryfall.com/docs/api
+
+            time.sleep(0.2)
+            
+            try:
+                card["price"] = get_card_price(card["name"])
+            except NameError as inst:
+                print(inst)
+                print("Skipping {}".format(card["name"]))
+                card["price"] = "N/A"
+
 
     if args.update_files:
         print("Updating {}".format(filename))
